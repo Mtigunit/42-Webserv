@@ -83,20 +83,61 @@ Since MacOS doesn’t implement write() the same way as other Unix OSes, you are
 
 ### Configuration File
 You can get some inspiration from the 'server' part of NGINX configuration file. In the configuration file, you should be able to:
-- Choose the port and host of each 'server'.
-- Setup the server_names or not.
-- The first server for a host:port will be the default for this host:port.
-- Setup default error pages.
-- Limit client body size.
-- Setup routes with one or multiple of the following rules/configuration (routes won’t be using regexp):
-  - Define a list of accepted HTTP methods for the route.
-  - Define a HTTP redirection.
-  - Define a directory or a file from where the file should be searched.
-  - Turn on or off directory listing.
-  - Set a default file to answer if the request is a directory.
-  - Execute CGI based on certain file extension.
-  - Make it work with POST and GET methods.
-  - Make the route able to accept uploaded files and configure where they should be saved.
+
+```bash
+
+server {
+  listen = 127.0.0.1:8080;
+  root = docs/website;
+  limit_client_body = 3G;
+  allowed_methods = DELETE POST GET;
+  error_page = 400, docs/website/error_pages/400.html;
+  error_page = 403, docs/website/error_pages/403.html;
+  error_page = 404, docs/website/error_pages/404.html;
+  error_page = 405, docs/website/error_pages/405.html;
+  error_page = 500, docs/website/error_pages/500.html;
+  error_page = 505, docs/website/error_pages/505.html;
+  location /upload {
+      upload_path = /goinfre/mtigunit/upload/;
+      allowed_methods = POST;
+  }
+  
+  location / {
+      autoindex = off;
+  }
+  
+  location /route {
+      autoindex = on;
+      index = route.html;
+      allowed_methods = GET POST;
+  }
+  
+  location /redirect {
+      return = 301, /;
+  }
+  
+  location /cgi-bin {
+      root = docs;
+      index = time.py;
+      cgi_executable = /usr/bin/python3;
+  }
+  
+  location .py {
+      allowed_methods = GET POST DELETE;
+      root = docs;
+      cgi_executable = /usr/bin/python3;
+  }
+  
+  location .sh {
+      root = docs;
+      cgi_executable = /bin/bash;
+  }
+}
+
+server {
+  listen = 8010;
+}
+```
 
 ## Bonus Part
 Here are the extra features you can add:
